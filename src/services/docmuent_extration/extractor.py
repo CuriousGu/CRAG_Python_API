@@ -4,8 +4,23 @@ from pathlib import Path
 from docx import Document
 from PyPDF2 import PdfReader
 import re
+from dataclasses import dataclass
 
-class Reader:
+@dataclass
+class DocumentResult:
+    """
+    Classe para armazenar o resultado da leitura de documentos.
+    
+    Attributes:
+        documents (List[str]): Lista de documentos processados
+        ids (List[str]): Lista de identificadores únicos
+        metadata (List[Dict]): Lista de metadados associados
+    """
+    documents: List[str]
+    ids: List[str]
+    metadata: List[Dict]
+
+class DocumentFileReader:
     """
     Classe para leitura e processamento de diferentes tipos de arquivos (JSON, PDF, DOCX, TXT).
     
@@ -32,17 +47,38 @@ class Reader:
     """
     
     def __init__(self, file_path: str, document_content: str):
-     
-        self.supported_extensions = {'.json', '.pdf', '.docx', '.txt'}
-        # Inicializa os atributos
-        self.documents = []
-        self.ids = []
-        self.metadata = []
-        # Processa o arquivo na inicialização
-        self.documents, self.ids, self.metadata = self.__call__(file_path, document_content)
-    
-    def __call__(self, file_path: str, document_content: str) -> Tuple[List[str], List[str], List[Dict]]:
+        """
+        Inicializa o leitor de documentos.
 
+        Args:
+            file_path (str): Caminho do arquivo a ser lido
+            document_content (str): Tipo de conteúdo do documento (ex: "noticia", "artigo")
+
+        Raises:
+            FileNotFoundError: Se o arquivo não for encontrado
+            ValueError: Se a extensão do arquivo não for suportada
+        """
+        self.supported_extensions = {'.json', '.pdf', '.docx', '.txt'}
+        result = self.__call__(file_path, document_content)
+        self.documents = result.documents
+        self.ids = result.ids
+        self.metadata = result.metadata
+    
+    def __call__(self, file_path: str, document_content: str) -> DocumentResult:
+        """
+        Processa o arquivo e retorna os resultados estruturados.
+
+        Args:
+            file_path (str): Caminho do arquivo a ser lido
+            document_content (str): Tipo de conteúdo do documento
+
+        Returns:
+            DocumentResult: Objeto contendo documentos, IDs e metadados
+
+        Raises:
+            FileNotFoundError: Se o arquivo não for encontrado
+            ValueError: Se a extensão do arquivo não for suportada
+        """
         path = Path(file_path)
         
         if not path.exists():
@@ -62,13 +98,25 @@ class Reader:
         reader = readers.get(path.suffix.lower())
         documents = reader(file_path)
         
-        ids = [f"{document_content}_{i+1}" for i in range(len(documents))]
+        ids = f"{document_content}"
         metadata = [{'document_content': document_content} for _ in range(len(documents))]
         
-        return documents, ids, metadata
+        return DocumentResult(documents=documents, ids=ids, metadata=metadata)
     
-    def _read_json(self, file_path: str) -> Tuple[List[str], Dict]:
-        
+    def _read_json(self, file_path: str) -> List[str]:
+        """
+        Lê e processa arquivos JSON.
+
+        Args:
+            file_path (str): Caminho do arquivo JSON
+
+        Returns:
+            List[str]: Lista de documentos extraídos do JSON
+
+        Notes:
+            - Espera-se que o JSON contenha uma chave 'texto' em cada item
+            - Pode processar tanto JSON único quanto lista de JSONs
+        """
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
             
@@ -78,8 +126,20 @@ class Reader:
             documents = [data.get('texto', '')]
         return documents
     
-    def _read_pdf(self, file_path: str) -> Tuple[List[str], Dict]:
-        
+    def _read_pdf(self, file_path: str) -> List[str]:
+        """
+        Lê e processa arquivos PDF.
+
+        Args:
+            file_path (str): Caminho do arquivo PDF
+
+        Returns:
+            List[str]: Lista contendo o texto completo do PDF
+
+        Notes:
+            - Todo o conteúdo do PDF é combinado em um único documento
+            - Páginas vazias são ignoradas
+        """
         reader = PdfReader(file_path)
 
         # Combina todo o texto do PDF em um único documento
@@ -90,8 +150,20 @@ class Reader:
 
         return documents
 
-    def _read_docx(self, file_path: str) -> Tuple[List[str], Dict]:
-        
+    def _read_docx(self, file_path: str) -> List[str]:
+        """
+        Lê e processa arquivos DOCX.
+
+        Args:
+            file_path (str): Caminho do arquivo DOCX
+
+        Returns:
+            List[str]: Lista contendo o texto completo do documento
+
+        Notes:
+            - Parágrafos vazios são ignorados
+            - Todo o conteúdo é combinado em um único documento
+        """
         doc = Document(file_path)
         # Combina todos os parágrafos em um único texto, separando por espaços
         full_text = " ".join(paragraph.text.strip() for paragraph in doc.paragraphs if paragraph.text.strip())
@@ -100,10 +172,22 @@ class Reader:
 
         return documents
 
-    def _read_txt(self, file_path: str) -> Tuple[List[str], Dict]:
-        
+    def _read_txt(self, file_path: str) -> List[str]:
+        """
+        Lê e processa arquivos de texto.
+
+        Args:
+            file_path (str): Caminho do arquivo TXT
+
+        Returns:
+            List[str]: Lista contendo o texto completo do arquivo
+
+        Notes:
+            - O arquivo inteiro é tratado como um único documento
+        """
         with open(file_path, 'r', encoding='utf-8') as file:
             text = file.read()
             documents = [text]
 
         return documents
+    
