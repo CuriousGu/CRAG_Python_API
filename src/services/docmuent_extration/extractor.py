@@ -7,24 +7,42 @@ import re
 
 class Reader:
     """
-    Classe genérica para leitura de diferentes tipos de arquivos (JSON, PDF, DOCX, TXT).
+    Classe para leitura e processamento de diferentes tipos de arquivos (JSON, PDF, DOCX, TXT).
+    
+    Esta classe fornece uma interface unificada para ler diferentes formatos de arquivo,
+    processando-os em documentos individuais e gerando identificadores únicos e metadados
+    para cada documento.
+
+    Attributes:
+        supported_extensions (set): Extensões de arquivo suportadas (.json, .pdf, .docx, .txt)
+        documents (list): Lista dos documentos processados
+        ids (list): Lista de identificadores únicos para cada documento
+        metadata (list): Lista de metadados associados a cada documento
+
+    Example:
+        >>> reader = Reader("documento.pdf", "noticia")
+        >>> print(len(reader.documents))  # número de documentos
+        >>> print(reader.ids)  # lista de IDs gerados
+        >>> print(reader.metadata)  # metadados dos documentos
+
+    Note:
+        - Arquivos PDF e DOCX são tratados como um único documento
+        - Arquivos JSON podem conter múltiplos documentos
+        - Arquivos TXT são tratados como um único documento
     """
     
-    def __init__(self):
-        """Inicializa o leitor de documentos."""
+    def __init__(self, file_path: str, document_content: str):
+     
         self.supported_extensions = {'.json', '.pdf', '.docx', '.txt'}
+        # Inicializa os atributos
+        self.documents = []
+        self.ids = []
+        self.metadata = []
+        # Processa o arquivo na inicialização
+        self.documents, self.ids, self.metadata = self.__call__(file_path, document_content)
     
     def __call__(self, file_path: str, document_content: str) -> Tuple[List[str], List[str], List[Dict]]:
-        """
-        Lê um arquivo e retorna seus documentos, IDs e metadados.
-        
-        Args:
-            file_path (str): Caminho para o arquivo
-            document_content (str): Tipo do documento (ex: 'noticia', 'artigo', 'contrato')
-            
-        Returns:
-            Tuple[List[str], List[str], List[Dict]]: (documentos, ids, metadados)
-        """
+
         path = Path(file_path)
         
         if not path.exists():
@@ -33,7 +51,7 @@ class Reader:
         if path.suffix.lower() not in self.supported_extensions:
             raise ValueError(f"Extensão não suportada: {path.suffix}")
         
-        # Seleciona o método apropriado baseado na extensão
+        # Resto do código permanece igual
         readers = {
             '.json': self._read_json,
             '.pdf': self._read_pdf,
@@ -42,41 +60,26 @@ class Reader:
         }
         
         reader = readers.get(path.suffix.lower())
-        documents, content = reader(file_path)
+        documents = reader(file_path)
         
-        # Adiciona os documentos ao content para uso no _generate_metadata
-        content['documents'] = documents
-        
-        # Gera IDs e metadados
         ids = [f"{document_content}_{i+1}" for i in range(len(documents))]
-        metadata = self._generate_metadata(content, document_content, path.name)
+        metadata = [{'document_content': document_content} for _ in range(len(documents))]
         
         return documents, ids, metadata
     
     def _read_json(self, file_path: str) -> Tuple[List[str], Dict]:
-        """Lê arquivo JSON."""
+        
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
             
         if isinstance(data, list):
             documents = [item.get('texto', '') for item in data]
-            content = {
-                'titulos': [item.get('titulo', '') for item in data],
-                'subtitulos': [item.get('subtitulo', '') for item in data],
-                'datas': [item.get('data', '') for item in data]
-            }
         else:
             documents = [data.get('texto', '')]
-            content = {
-                'titulos': [data.get('titulo', '')],
-                'subtitulos': [data.get('subtitulo', '')],
-                'datas': [data.get('data', '')]
-            }
-            
-        return documents, content
+        return documents
     
     def _read_pdf(self, file_path: str) -> Tuple[List[str], Dict]:
-        """Lê arquivo PDF como um único documento."""
+        
         reader = PdfReader(file_path)
 
         # Combina todo o texto do PDF em um único documento
@@ -85,14 +88,22 @@ class Reader:
         # Cria uma lista com um único documento
         documents = [full_text]
 
-        # Metadata com informações do PDF
-        content = {
-            'total_pages': len(reader.pages),
-            'file_name': Path(file_path).name,
-            'file_type': 'pdf',
-            'file_size': Path(file_path).stat().st_size,  # tamanho em bytes
-            'created_at': str(Path(file_path).stat().st_ctime),  # data de criação
-            'modified_at': str(Path(file_path).stat().st_mtime)  # data de modificação
-        }
+        return documents
 
-        return documents, content
+    def _read_docx(self, file_path: str) -> Tuple[List[str], Dict]:
+        
+        doc = Document(file_path)
+        # Combina todos os parágrafos em um único texto, separando por espaços
+        full_text = " ".join(paragraph.text.strip() for paragraph in doc.paragraphs if paragraph.text.strip())
+        # Retorna uma lista com um único documento
+        documents = [full_text]
+
+        return documents
+
+    def _read_txt(self, file_path: str) -> Tuple[List[str], Dict]:
+        
+        with open(file_path, 'r', encoding='utf-8') as file:
+            text = file.read()
+            documents = [text]
+
+        return documents
