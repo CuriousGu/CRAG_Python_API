@@ -46,31 +46,31 @@ class DocumentFileReader:
         - Arquivos TXT são tratados como um único documento
     """
     
-    def __init__(self, file_path: str, document_content: str):
+    def __init__(self, file_path: str, tags_documnets: str, documnet_id: Optional[str] = None):
         """
         Inicializa o leitor de documentos.
 
         Args:
             file_path (str): Caminho do arquivo a ser lido
-            document_content (str): Tipo de conteúdo do documento (ex: "noticia", "artigo")
+            tags_documnets (str): Tipo de conteúdo do documento (ex: "noticia", "artigo")
 
         Raises:
             FileNotFoundError: Se o arquivo não for encontrado
             ValueError: Se a extensão do arquivo não for suportada
         """
         self.supported_extensions = {'.json', '.pdf', '.docx', '.txt'}
-        result = self.__call__(file_path, document_content)
+        result = self.__call__(file_path, tags_documnets, documnet_id)
         self.documents = result.documents
         self.ids = result.ids
         self.metadata = result.metadata
     
-    def __call__(self, file_path: str, document_content: str) -> DocumentResult:
+    def __call__(self, file_path: str, tags_documnets: str, documnet_id: Optional[str] = None) -> DocumentResult:
         """
         Processa o arquivo e retorna os resultados estruturados.
 
         Args:
             file_path (str): Caminho do arquivo a ser lido
-            document_content (str): Tipo de conteúdo do documento
+            tags_documnets (str): Tipo de conteúdo do documento
 
         Returns:
             DocumentResult: Objeto contendo documentos, IDs e metadados
@@ -87,7 +87,6 @@ class DocumentFileReader:
         if path.suffix.lower() not in self.supported_extensions:
             raise ValueError(f"Extensão não suportada: {path.suffix}")
         
-        # Resto do código permanece igual
         readers = {
             '.json': self._read_json,
             '.pdf': self._read_pdf,
@@ -98,11 +97,20 @@ class DocumentFileReader:
         reader = readers.get(path.suffix.lower())
         documents = reader(file_path)
         
-        ids = f"{document_content}"
-        metadata = [{'document_content': document_content} for _ in range(len(documents))]
+        # Gerando IDs únicos
+        if documnet_id is None:
+            ids = [f"{tags_documnets}_{i}" for i in range(len(documents))]
+        else:
+            ids = [documnet_id]
+        metadata = [{'id': doc_id, 'tags_documnets': tags_documnets} for doc_id in ids]
         
-        return DocumentResult(documents=documents, ids=ids, metadata=metadata)
-    
+        # Retornando o DocumentResult
+        return DocumentResult(
+            documents=documents,
+            ids=ids,
+            metadata=metadata
+        )
+
     def _read_json(self, file_path: str) -> List[str]:
         """
         Lê e processa arquivos JSON.
