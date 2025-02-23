@@ -3,7 +3,7 @@ from typing import Optional, List, Dict
 
 class AddDocumentRequest(BaseModel):
     file_path: str
-    document_content: str
+    tags_documnets: str
     collection_name: str
 
 class QueryDocumentRequest(BaseModel):
@@ -15,3 +15,9 @@ class QueryDocumentRequest(BaseModel):
 class DeleteDocumentRequest(BaseModel):
     ids: List[str]
     collection_name: str
+
+class ListDocumentsRequest(BaseModel):   
+    collection_name: str
+
+class ListCollectionsRequest(BaseModel):
+    pass

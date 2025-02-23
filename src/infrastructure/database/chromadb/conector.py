@@ -87,6 +87,21 @@ class ChromaDB:
             n_results=n_results,
             where=where
         )
+    
+    async def list_collections(self):
+        """List all collections in ChromaDB.
+
+        Returns:
+            dict: List of collections
+        """
+        return self.client.list_collections()
+    
+    async def list_documents(self, collection_name: str):
+        """List all documents in a
+        collection. Args:   collection_name (str): Name of the collection to list documents from Returns:     dict: List of documents in the collection"""
+        if not self.collection:
+            self.collection = self._create_collection(collection_name)
+        return self.collection.get(include=["documents", "metadatas"])
 
     async def delete_documents(self, ids: List[str],collection_name: str):
         """Delete documents from collection by IDs.
@@ -104,7 +119,7 @@ class ChromaDB:
             self.collection = self._create_collection(collection_name)
         return self.collection.delete(ids=ids)
 
-    async def close(self):
+    def __del__(self):
         """Close ChromaDB connection and clean up resources."""
         if self.client:
             self.client.reset()

@@ -6,11 +6,12 @@ from typing import List, Dict, Optional
 async def add_documents(
     db: ChromaDB,
     file_path: str,
-    document_content: str,
-    collection_name: str
+    tags_documnets: str,
+    collection_name: str,
+    documnet_id: Optional[List[str]] = None
 ) -> Dict:
     
-    reader = DocumentFileReader(file_path, document_content)
+    reader = DocumentFileReader(file_path, tags_documnets, documnet_id)
     result = await db.add_documents(
         documents=reader.documents,
         collection_name=collection_name,
@@ -40,6 +41,21 @@ async def delete_documents(
 ):
     result = await db.delete_documents(
         ids=ids,
+        collection_name=collection_name
+    )
+    return result
+
+async def list_collections(
+    db: ChromaDB
+):
+    result = await db.list_collections()
+    return result
+
+async def list_documents(
+    db: ChromaDB,
+    collection_name: str,
+):
+    result = await db.list_documents(
         collection_name=collection_name
     )
     return result
