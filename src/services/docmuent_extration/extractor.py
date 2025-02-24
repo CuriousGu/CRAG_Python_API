@@ -1,6 +1,7 @@
 import json
 from typing import List, Dict, Tuple, Optional
 from pathlib import Path
+import uuid
 from docx import Document
 from PyPDF2 import PdfReader
 import re
@@ -46,31 +47,31 @@ class DocumentFileReader:
         - Arquivos TXT são tratados como um único documento
     """
     
-    def __init__(self, file_path: str, tags_documnets: str, documnet_id: Optional[str] = None):
+    def __init__(self, file_path: str, metadata: str, documnet_id: Optional[str] = None):
         """
         Inicializa o leitor de documentos.
 
         Args:
             file_path (str): Caminho do arquivo a ser lido
-            tags_documnets (str): Tipo de conteúdo do documento (ex: "noticia", "artigo")
+            metadata (str): Tipo de conteúdo do documento (ex: "noticia", "artigo")
 
         Raises:
             FileNotFoundError: Se o arquivo não for encontrado
             ValueError: Se a extensão do arquivo não for suportada
         """
         self.supported_extensions = {'.json', '.pdf', '.docx', '.txt'}
-        result = self.__call__(file_path, tags_documnets, documnet_id)
+        result = self.__call__(file_path, metadata, documnet_id)
         self.documents = result.documents
         self.ids = result.ids
         self.metadata = result.metadata
     
-    def __call__(self, file_path: str, tags_documnets: str, documnet_id: Optional[str] = None) -> DocumentResult:
+    def __call__(self, file_path: str, metadata: Optional[str] = None, documnet_id: Optional[str] = None) -> DocumentResult:
         """
         Processa o arquivo e retorna os resultados estruturados.
 
         Args:
             file_path (str): Caminho do arquivo a ser lido
-            tags_documnets (str): Tipo de conteúdo do documento
+            metadata (str): Tipo de conteúdo do documento
 
         Returns:
             DocumentResult: Objeto contendo documentos, IDs e metadados
@@ -99,10 +100,9 @@ class DocumentFileReader:
         
         # Gerando IDs únicos
         if documnet_id is None:
-            ids = [f"{tags_documnets}_{i}" for i in range(len(documents))]
+            ids=[str(uuid.uuid4()) for _ in enumerate(documents)]
         else:
             ids = [documnet_id]
-        metadata = [{'id': doc_id, 'tags_documnets': tags_documnets} for doc_id in ids]
         
         # Retornando o DocumentResult
         return DocumentResult(
