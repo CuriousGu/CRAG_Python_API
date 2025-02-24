@@ -15,7 +15,6 @@ async def add_document_route(doc_request: AddDocumentRequest, req: Request) -> A
         result = await add_documents(
             req.app.vectordb,
             doc_request.file_path,
-            doc_request.tags_documnets,
             doc_request.collection_name
         )
 

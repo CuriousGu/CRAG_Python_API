@@ -18,7 +18,7 @@ class ChromaDB:
         client = chromadb.HttpClient(host=self.host, port=self.port)
         return client
 
-    def _create_collection(self, collection_name: str):
+    def _get_or_create_collection(self, collection_name: str):
         """Create or get an existing collection.
 
         Args:
@@ -52,8 +52,8 @@ class ChromaDB:
         Returns:
             dict: Result of add operation
         """
-        if not self.collection:
-            self.collection = self._create_collection(collection_name)
+
+        self.collection = self._get_or_create_collection(collection_name)
         return self.collection.add(
             documents=documents,
             metadatas=metadatas,
@@ -80,8 +80,8 @@ class ChromaDB:
         Returns:
             dict: Query results
         """
-        if not self.collection:
-            self.collection = self._create_collection(collection_name)
+        
+        self.collection = self._get_or_create_collection(collection_name)
         return self.collection.query(
             query_texts=[query_text],
             n_results=n_results,
@@ -99,8 +99,8 @@ class ChromaDB:
     async def list_documents(self, collection_name: str):
         """List all documents in a
         collection. Args:   collection_name (str): Name of the collection to list documents from Returns:     dict: List of documents in the collection"""
-        if not self.collection:
-            self.collection = self._create_collection(collection_name)
+
+        self.collection = self._get_or_create_collection(collection_name)
         return self.collection.get(include=["documents", "metadatas"])
 
     async def delete_documents(self, ids: List[str],collection_name: str):
@@ -115,8 +115,8 @@ class ChromaDB:
         Returns:
             dict: Result of delete operation
         """
-        if not self.collection:
-            self.collection = self._create_collection(collection_name)
+        
+        self.collection = self._get_or_create_collection(collection_name)
         return self.collection.delete(ids=ids)
 
     def __del__(self):

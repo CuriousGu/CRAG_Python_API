@@ -6,12 +6,12 @@ from typing import List, Dict, Optional
 async def add_documents(
     db: ChromaDB,
     file_path: str,
-    tags_documnets: str,
     collection_name: str,
+    metadata: Optional[str] = None,
     documnet_id: Optional[List[str]] = None
 ) -> Dict:
     
-    reader = DocumentFileReader(file_path, tags_documnets, documnet_id)
+    reader = DocumentFileReader(file_path, metadata, documnet_id)
     result = await db.add_documents(
         documents=reader.documents,
         collection_name=collection_name,

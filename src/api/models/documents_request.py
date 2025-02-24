@@ -3,7 +3,6 @@ from typing import Optional, List, Dict
 
 class AddDocumentRequest(BaseModel):
     file_path: str
-    tags_documnets: str
     collection_name: str
 
 class QueryDocumentRequest(BaseModel):
