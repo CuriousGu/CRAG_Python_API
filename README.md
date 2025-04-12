@@ -1,4 +1,4 @@
-# CRAG API
+# Bot de Notícias
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
@@ -12,7 +12,7 @@
 
 ## Sobre o Projeto
 
-A CRAG API é uma aplicação conversacional baseada em um grafo que utiliza a técnica de Retrieval-Augmented Generation (RAG), com um nó adicional de correção. Antes de gerar uma resposta com base em um documento semanticamente semelhante, o sistema avalia seu contexto, garantindo maior precisão e coerência.
+É aplicação conversacional baseada em um grafo que utiliza a técnica de Retrieval-Augmented Generation (RAG), com um nó adicional de correção. Antes de gerar uma resposta com base em um documento semanticamente semelhante, o sistema avalia seu contexto, garantindo maior precisão e coerência.
 
 O sistema adota uma arquitetura em camadas (Layered Architecture), utilizando FastAPI como framework principal para a API REST. O armazenamento é dividido entre ChromaDB, responsável pela gestão dos arquivos usados no RAG, e MongoDB, que armazena os logs da aplicação.
 
