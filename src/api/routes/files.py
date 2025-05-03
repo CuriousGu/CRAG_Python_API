@@ -82,7 +82,7 @@ async def upload_files(
     try:
         _ = await controller_upload_file(
             file=file,
-            metadata=FileMetadata(),
+            metadata=FileMetadata(file_name=file.filename),
             vector_store=req.app.vector_store,
         )
 

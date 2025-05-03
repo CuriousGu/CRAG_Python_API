@@ -185,10 +185,49 @@ class ChromaDB:
             ]
             created_at.sort(key=lambda x: x[1])
 
-            return [
-                {"page_content": results["documents"][index]}
-                for index, _ in created_at[-n:]
-            ]
+            unique_titles = set()
+            unique_documents = []
+
+            for index, _ in created_at:
+                title = results["metadatas"][index].get("file_name")
+                if title and title not in unique_titles:
+                    unique_titles.add(title)
+                    unique_documents.append(
+                        {
+                            "page_content": results["documents"][index],
+                            "metadata": {"file_name": title}
+                        }
+                    )
+                if len(unique_documents) == n:
+                    break
+
+            return unique_documents
 
         except Exception as e:
             raise ValueError(f"Erro ao buscar arquivos recentes: {e}")
+
+    @staticmethod
+    def find_files(file_name: str) -> List:
+        try:
+            db = ChromaDB()
+            collection = db.client.get_collection(settings.INDEX_NAME)
+            results = collection.get() or []
+
+            found_documents = []
+
+            for index, metadata in enumerate(results.get("metadatas", [])):
+                title = metadata.get("file_name", "")
+                if title and file_name.lower() in title.lower():
+                    found_documents.append(
+                        {
+                            "page_content": results["documents"][index],
+                            "metadata": metadata
+                        }
+                    )
+
+            return found_documents
+
+        except Exception as e:
+            raise ValueError(
+                f"Erro ao buscar arquivos por nome: {e}"
+            )
