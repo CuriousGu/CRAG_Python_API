@@ -53,5 +53,5 @@ class DocumentReader:
         return pdf_text
 
     @staticmethod
-    async def _read_plain(contents):
+    async def _read_txt(contents):
         return contents.decode('utf-8')

@@ -33,7 +33,9 @@ async def contr_new_message(
     history.append({
         "role": "assistant",
         "content": response["messages"],
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "docs": response.get("docs", []),
+        "decision_type": response.get("decision_type", "")
     })
 
     _ = await add_message_to_history(

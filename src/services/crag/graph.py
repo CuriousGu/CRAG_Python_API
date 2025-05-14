@@ -6,10 +6,12 @@ from langgraph.graph import StateGraph, START, END
 from src.infrastructure.config import settings
 from .templates import AgentState
 from .nodes import (
-    agent,
+    get_news,
     should_continue,
     generate,
     grade_documents,
+    find_references,
+    flow_decision,
     CustomToolNode
 )
 
@@ -31,7 +33,11 @@ class CRAG:
                     "model": model,
                 }
             )
-            return {"messages": response["messages"][-1].content}
+            return {
+                "messages": response["messages"][-1].content,
+                "docs": list(response["docs"]) if response.get("docs") else [],
+                "decision_type": response["decision_type"]
+            }
 
         except Exception as e:
             raise ValueError(f"Error invoking CRAG: {e}")
@@ -39,22 +45,37 @@ class CRAG:
     def build(self):
         try:
             builder = StateGraph(AgentState)
-            builder.add_node("agent", lambda state: agent(state))
+            builder.add_node("find_references", find_references)
+            builder.add_node("get_news", get_news)
             builder.add_node("tools", CustomToolNode())
             builder.add_node("crag", grade_documents)
             builder.add_node("generate", generate)
 
-            builder.add_edge(START, "agent")
             builder.add_conditional_edges(
-                "agent",
+                START,
+                flow_decision,
+                {
+                    "general": "get_news",
+                    "specific": "find_references",
+                    "end": "generate"
+                }
+            )
+            # DETAILED SEARCH
+            builder.add_edge("find_references", "generate")
+
+            # MOST RECENT OR RETRIEVER
+            builder.add_conditional_edges(
+                "get_news",
                 should_continue,
                 {
                     "continue": "tools",
-                    "end": END
+                    "end": "generate"
                 }
             )
             builder.add_edge("tools", "crag")
             builder.add_edge("crag", "generate")
+
+            # END
             builder.add_edge("generate", END)
             self.graph = builder.compile()
 

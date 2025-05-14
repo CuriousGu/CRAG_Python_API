@@ -15,14 +15,27 @@ class AgentState(TypedDict):
     docs: List[Dict]
     model: OllamaLLM | ChatOpenAI
     index_name: str = Field(default=settings.INDEX_NAME)
+    user_last_message: str
+    decision_type: str
 
 
 class GradeDocument(BaseModel):
-    """ Binary Score to evaluate the relevance of the text to the query
+    """ Evaluate the relevance of the text to the query
         The response values must be "yes" or "no".
         These documents must support the agent's response.
     """
     binary_score: str = Field(
         ...,
-        description="binary score of the document relevance"
+        description="""
+            binary score of the document relevance
+            The response values must be "yes" or "no".
+        """
     )
+
+
+class FlowDecision(BaseModel):
+    decision: str
+
+
+class IsSpecificFile(BaseModel):
+    arquivo_relevante: bool

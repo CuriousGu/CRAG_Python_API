@@ -1,4 +1,4 @@
-# CRAG API
+# Bot de Notícias
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
@@ -9,10 +9,11 @@
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-FFA500?style=for-the-badge&logo=prisma&logoColor=white)
 ![Llama](https://img.shields.io/badge/Llama-FF6B6B?style=for-the-badge&logo=meta&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
+![C++](https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
 
 ## Sobre o Projeto
 
-A CRAG API é uma aplicação conversacional baseada em um grafo que utiliza a técnica de Retrieval-Augmented Generation (RAG), com um nó adicional de correção. Antes de gerar uma resposta com base em um documento semanticamente semelhante, o sistema avalia seu contexto, garantindo maior precisão e coerência.
+É aplicação conversacional baseada em um grafo que utiliza a técnica de Retrieval-Augmented Generation (RAG), com um nó adicional de correção. Antes de gerar uma resposta com base em um documento semanticamente semelhante, o sistema avalia seu contexto, garantindo maior precisão e coerência.
 
 O sistema adota uma arquitetura em camadas (Layered Architecture), utilizando FastAPI como framework principal para a API REST. O armazenamento é dividido entre ChromaDB, responsável pela gestão dos arquivos usados no RAG, e MongoDB, que armazena os logs da aplicação.
 
@@ -25,6 +26,28 @@ A API e os containers já estão configurados. Para iniciar a aplicação, basta
 docker-compose -f docker/docker-compose.yml --env-file .env up --build
 ```
 PS: Não se esqueça de alterar os [Prompts](src/services/crag/prompts.py).
+
+## O grafo
+<pre><code>```mermaid
+graph TD
+	__start__([<p>__start__</p>]):::first
+	find_references(find_references)
+	agent(agent)
+	tools(tools)
+	crag(crag)
+	generate(generate)
+	__end__([<p>__end__</p>]):::last
+	crag -->generate;
+	find_references --> generate;
+	generate --> __end__;
+	tools --> crag;
+	__start__ -. &nbsp;general&nbsp; .-> agent;
+	__start__ -. &nbsp;specific&nbsp; .-> find_references;
+	agent -.&nbsp;continue&nbsp; .-> tools;
+	agent -. &nbsp;end&nbsp; .-> __end__
+```</code></pre>
+
+
 
 ## Autor
 
@@ -46,3 +69,4 @@ Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 ## Contatos
 - Email: gustavo_ortega@usp.br
 - Linkedin: [Gustavo M. Ortega](https://www.linkedin.com/in/gustavomendoncaortega/)
+

@@ -143,13 +143,14 @@ class ChromaDB:
 
     @staticmethod
     @tool("retriever")
-    def retrieve(query: str) -> List:
+    def retrieve(query: str, n: int = 10) -> List:
         """
         Método que faz uma requisição a vector store para consultar os
         documentos que podem ajudar a responder a pergunta do usuário.
 
         Args:
             query (str): A query para a vector store.
+            n (int): Quantidade de documentos a serem retornados.
 
         Returns:
             List[Document]: Uma lista de documentos recuperados
@@ -157,7 +158,33 @@ class ChromaDB:
         try:
             db = ChromaDB()
             retriever = db._as_retriever(settings.INDEX_NAME)
-            return retriever.invoke(query)
+            # Limitando a quantidade de documentos retornados para n+10
+            # Isso garante que tenhamos documentos suficientes para filtrar posteriormente
+            response = retriever.invoke(query)
+
+            created_at = [
+                (index, x["created_at"])
+                for index, x in enumerate(response.get("metadatas", []))
+            ]
+            created_at.sort(key=lambda x: x[1])
+
+            unique_titles = set()
+            unique_documents = []
+
+            for index, _ in created_at:
+                title = response["metadatas"][index].get("file_name")
+                if title and title not in unique_titles:
+                    unique_titles.add(title)
+                    unique_documents.append(
+                        {
+                            "page_content": response["documents"][index],
+                            "metadata": {"file_name": title}
+                        }
+                    )
+                if len(unique_documents) == n:
+                    break
+
+            return unique_documents
         except Exception as e:
             raise e
 
@@ -166,7 +193,7 @@ class ChromaDB:
     def get_most_recent(n: int = 5) -> List:
         """
         Método que faz uma requisição a vector store para consultar os
-        arquivos que foram adicionados mais recentemente.
+        arquivos SEM CONTEXTO ESPECÍFICO, que foram adicionados recentemente.
 
         Args:
             n (int): Quantidade de arquivos a serem retornados.
@@ -185,10 +212,49 @@ class ChromaDB:
             ]
             created_at.sort(key=lambda x: x[1])
 
-            return [
-                {"page_content": results["documents"][index]}
-                for index, _ in created_at[-n:]
-            ]
+            unique_titles = set()
+            unique_documents = []
+
+            for index, _ in created_at:
+                title = results["metadatas"][index].get("file_name")
+                if title and title not in unique_titles:
+                    unique_titles.add(title)
+                    unique_documents.append(
+                        {
+                            "page_content": results["documents"][index],
+                            "metadata": {"file_name": title}
+                        }
+                    )
+                if len(unique_documents) == n:
+                    break
+
+            return unique_documents
 
         except Exception as e:
             raise ValueError(f"Erro ao buscar arquivos recentes: {e}")
+
+    @staticmethod
+    def find_files(file_name: str) -> List:
+        try:
+            db = ChromaDB()
+            collection = db.client.get_collection(settings.INDEX_NAME)
+            results = collection.get() or []
+
+            found_documents = []
+
+            for index, metadata in enumerate(results.get("metadatas", [])):
+                title = metadata.get("file_name", "")
+                if title and file_name.lower() in title.lower():
+                    found_documents.append(
+                        {
+                            "page_content": results["documents"][index],
+                            "metadata": metadata
+                        }
+                    )
+
+            return found_documents
+
+        except Exception as e:
+            raise ValueError(
+                f"Erro ao buscar arquivos por nome: {e}"
+            )
